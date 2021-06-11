@@ -3,8 +3,6 @@ import cors from "cors";
 import Load from "./utils/Load.js";
 import Save from "./utils/Save.js";
 import dayjs from "dayjs";
-// import { strict as assert } from "assert";
-// import { stripHtml } from "string-strip-html";
 
 const filePath = "./data.json";
 
@@ -85,6 +83,7 @@ App.post("/messages", (req, res) => {
     const newMessage = {
         "from": req.headers.user,
         ...req.body,
+        "text": req.body.text.trim(),
         "time": dayjs().format("HH:mm:ss")
     };
     data.messages.push(newMessage);
