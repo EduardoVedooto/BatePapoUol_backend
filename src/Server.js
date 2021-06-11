@@ -17,20 +17,36 @@ setInterval(() => RemoveParticipant(), 25000);
 const RemoveParticipant = () => {
     const data = Load(filePath);
     data.participants.forEach((participant, index) => {
-        console.log("Chegou aqui");
-        if (Date.now() - 12000 > participant.lastStatus) {
-            console.log("excluído");
+        if (Date.now() - 10000 > participant.lastStatus) {
             data.participants.splice(index, 1);
             Save(data, filePath);
         }
     });
-}
+};
+
+App.post("/status", (req, res) => {
+    const data = Load(filePath);
+    const participant = data.participants.find(p => p.name === req.headers.user);
+    if (!participant) {
+        res.sendStatus(400);
+        return;
+    }
+    participant.lastStatus = Date.now();
+    Save(data, filePath);
+    res.sendStatus(200);
+
+});
+
+App.get("/participants", (req, res) => {
+    const data = Load(filePath);
+    res.send(data.participants);
+});
 
 App.post("/participants", (req, res) => {
     const body = req.body;
     const data = Load(filePath);
     if (data.participants.find(participant => participant.name === body.name.trim())) {
-        App.status(400);
+        res.sendStatus(400);
         return;
     }
     data.participants.push({
@@ -48,25 +64,20 @@ App.post("/participants", (req, res) => {
     res.sendStatus(200);
 });
 
-App.get("/participants", (req, res) => {
-    const data = Load(filePath);
-    res.send(data.participants);
-});
-
 App.get("/messages", (req, res) => {
-    const data = Load(filePath);
+    const messages = Load(filePath).messages.reverse();
     const limit = req.query.limit;
-    const user = req.headers.use;
+    const user = req.headers.user;
     const messagesToSend = [];
-    const condition = limit ? limit > data.messages.length ? data.messages.length : limit : data.messages.length;
+    const condition = limit ? limit > messages.length ? messages.length : limit : messages.length;
     for (let i = 0; i < condition; i++) {
-        if (data.messages[i].from === user ||
-            data.messages[i].to === user ||
-            data.messages[i].to === "Todos") {
-            messagesToSend.push(data.messages[i]);
+        if (messages[i].from === user ||
+            messages[i].to === user ||
+            messages[i].to === "Todos") {
+            messagesToSend.push(messages[i]);
         }
     }
-    res.status(200).send(messagesToSend);
+    res.status(200).send(messagesToSend.reverse());
 });
 
 App.post("/messages", (req, res) => {
@@ -78,21 +89,7 @@ App.post("/messages", (req, res) => {
     };
     data.messages.push(newMessage);
     Save(data, filePath);
-    res.status(200);
-});
-
-App.post("/status", (req, res) => {
-    console.log("status atualizado");
-    const data = Load(filePath);
-    const participant = data.participants.find(p => p.name === req.headers.user);
-    console.log(participant);
-    if (!participant) {
-        res.status(400);
-        return;
-    }
-    participant.lastStatus = Date.now();
-    Save(data, filePath);
-    res.status(200);
+    res.sendStatus(200);
 });
 
 App.listen(4000, () => console.log("Running server..."));
